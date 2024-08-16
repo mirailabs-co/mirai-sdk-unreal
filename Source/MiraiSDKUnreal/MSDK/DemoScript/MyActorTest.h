@@ -31,15 +31,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void FetchMySeatOnSale();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
-	void FetchGuilds(FString leaderboardId, FString name, int page, int limit, SortType sort);
+	void FetchGuilds(FString leaderboardId, FString name, int page, int limit, ESortType sort);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void JoinGuild(FString guildId);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetLeaderboards();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetFirstLeaderboard();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetListGuild();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetMyUserData();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetMyGuildData();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetMyRequestJoinGuild();
 	UPROPERTY(BlueprintAssignable, Category = "TestFunc")
 	FUpdateUIDelegate UpdateUIDelegate;
 

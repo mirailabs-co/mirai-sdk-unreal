@@ -3,6 +3,7 @@
 
 #include "MyActorTest.h"
 
+#include "MiraiSDKUnreal/MSDK/GameUtils.h"
 #include "MiraiSDKUnreal/MSDK/RestApi.h"
 #include "MiraiSDKUnreal/MSDK/Shard/ShardsTech.h"
 
@@ -54,11 +55,29 @@ FString AMyActorTest::GetListGuild()
 	return result;
 }
 
+FString AMyActorTest::GetMyRequestJoinGuild()
+{
+	FString result = FString();
+	int index = 0;
+	for (auto request : ShardsTech::ListJoinGuildRequests)
+	{
+		index++;
+		result += FString::FromInt(index) + ". " + request.guild + " - " + GameUtils::EnumToString(request.status) + "\n";
+	}
+	return result;
+}
+
+FString AMyActorTest::GetFirstLeaderboard()
+{
+	return FString(ShardsTech::ListLeaderboards[0]._id);
+}
+
+
 // Called when the game starts or when spawned
 void AMyActorTest::BeginPlay()
 {
 	Super::BeginPlay();
-	ShardsTech::Init(ShardEnviron::Dev);
+	ShardsTech::Init(EShardEnviron::Dev);
 }
 
 void AMyActorTest::Login()
@@ -108,7 +127,7 @@ void AMyActorTest::FetchMySeatOnSale()
 	});
 }
 
-void AMyActorTest::FetchGuilds(FString leaderboardId, FString nameFilter, int page, int limit, SortType sort)
+void AMyActorTest::FetchGuilds(FString leaderboardId, FString nameFilter, int page, int limit, ESortType sort)
 {
 	ShardsTech::GetLeaderboards([this](auto res)
 	{
@@ -117,6 +136,18 @@ void AMyActorTest::FetchGuilds(FString leaderboardId, FString nameFilter, int pa
 	ShardsTech::GetGuildScores(leaderboardId, nameFilter, page, limit, sort, [this](auto res)
 	{
 		GuildScoreDto = res;
+		UpdateUIDelegate.Broadcast();
+	});
+	ShardsTech::GetJoinGuildRequestsOfUser([this](auto res)
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+void AMyActorTest::JoinGuild(FString guildId)
+{
+	ShardsTech::CreateJoinGuildRequest(guildId, [this](auto res)
+	{
 		UpdateUIDelegate.Broadcast();
 	});
 }

@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "UserScoreData.h"
 
+#include "UserScoreData.h"
 #include "UserScoresDTO.generated.h"
 
 USTRUCT(BlueprintType)
