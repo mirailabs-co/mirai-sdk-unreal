@@ -1,6 +1,9 @@
 ﻿#include "ShardsTech.h"
 
 #include "Guild/GuildScoreDTO.h"
+#include "History/GuildHistoryList.h"
+#include "History/UserHistory.h"
+#include "History/UserHistoryList.h"
 #include "MiraiSDKUnreal/MSDK/GameUtils.h"
 #include "Serialization/JsonSerializable.h"
 
@@ -111,22 +114,6 @@ void ShardsTech::GetGuildScores(FString leaderBoardId, FString name, int page, i
 	RestApi::Request<FGuildScoreDTO>(ShardAPI + url, "GET", "", CallbackSuccess);
 }
 
-void ShardsTech::CreateGuild(FString name, double seatPrice, FString metadata, float txGuildOwnerShare,
-		float profitGuildOwner, float profitMember)
-{
-	// var rewardShareForMembers= 1 - profitPercentConfig.FractionsOwnerPercent;
-	// var guildOwnerShare = profitPercentConfig.GuildOwnerPercent / rewardShareForMembers;
-	// await ExecuteAction("create-guild", new Dictionary<string, object>()
-	// {
-	// 	{ "name", name },
-	// 	{ "slotPrice", seatPrice },
-	// 	{ "rewardShareForMembers", rewardShareForMembers },
-	// 	{ "txGuildOwnerShare", txGuildOwnerShare },
-	// 	{ "guildOwnerShare", guildOwnerShare }
-	// }, metadata, cancellationToken: cancellationToken);
-	// FetchMyGuild();
-}
-
 void ShardsTech::CreateJoinGuildRequest(FString guildId, TFunction<void(FJoinGuildRequest)> onSuccess, TFunction<void()> onFailed)
 {
 	auto CallbackSuccess = [onSuccess, onFailed](auto request)
@@ -158,7 +145,7 @@ void ShardsTech::GetJoinGuildRequestsOfGuild(FString guildId, TFunction<void(TAr
 		if (onSuccess != nullptr)
 			onSuccess(responeseData);
 	};
-	RestApi::Request<TArray<FJoinGuildRequest>>(ShardAPI + "join-guild-request" + guildId, "GET", "", CallbackSuccess, onFailed);
+	RestApi::Request<TArray<FJoinGuildRequest>>(ShardAPI + "join-guild-request/" + guildId, "GET", "", CallbackSuccess, onFailed);
 }
 
 void ShardsTech::AcceptJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess, TFunction<void()> onFailed)
@@ -195,11 +182,30 @@ void ShardsTech::RejectJoinGuildRequest(FString guildId, FString userId, TFuncti
 	RestApi::Request<FJoinGuildRequest>(ShardAPI + "join-guild-request/user-reject" + guildId, "PUT", jsonData, CallbackSuccess, onFailed);
 }
 
-
-void ShardsTech::WaitAction()
+void ShardsTech::GetUserHistories(int page, int limit, TFunction<void(FUserHistoryList)> onSuccess, TFunction<void()> onFailed)
 {
-	// while (true)
-	// {
-	// 	FPlatformProcess::Sleep(0.1f);
-	// }
+	auto CallbackSuccess = [onSuccess](auto responeseData)
+	{
+		if (onSuccess != nullptr)
+			onSuccess(responeseData);
+	};
+	
+	FString url = "transaction-history?";
+	url += "limit=" + FString::FromInt(limit);
+	url += "&page=" + FString::FromInt(page);
+	RestApi::Request<FUserHistoryList>(ShardAPI + url, "GET", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::GetGuildHistories(int page, int limit, TFunction<void(FGuildHistoryList)> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess](auto responeseData)
+	{
+		if (onSuccess != nullptr)
+			onSuccess(responeseData);
+	};
+	
+	FString url = "transaction-history/guild?";
+	url += "limit=" + FString::FromInt(limit);
+	url += "&page=" + FString::FromInt(page);
+	RestApi::Request<FGuildHistoryList>(ShardAPI + url, "GET", "", CallbackSuccess, onFailed);
 }

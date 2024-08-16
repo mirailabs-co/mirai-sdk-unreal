@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MiraiSDKUnreal/MSDK/Shard/Guild/GuildScoreDTO.h"
+#include "MiraiSDKUnreal/MSDK/Shard/History/GuildHistory.h"
+#include "MiraiSDKUnreal/MSDK/Shard/History/UserHistory.h"
+#include "MiraiSDKUnreal/MSDK/Shard/JoinRequest/JoinGuildRequest.h"
 #include "MyActorTest.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUpdateUIDelegate);
@@ -36,6 +39,19 @@ public:
 	void JoinGuild(FString guildId);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetLeaderboards();
+
+	TArray<FUserHistory> UserHistories;
+	TArray<FGuildHistory> GuildHistories;
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void UpdateUserHistory(int page, int limit);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void UpdateGuildHistory(int page, int limit);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetUserHistory();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetGuildHistory();
+
+	TArray<FJoinGuildRequest> GuildRequests;
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetFirstLeaderboard();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
@@ -46,6 +62,8 @@ public:
 	FString GetMyGuildData();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetMyRequestJoinGuild();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetGuildRequestJoinGuild();
 	UPROPERTY(BlueprintAssignable, Category = "TestFunc")
 	FUpdateUIDelegate UpdateUIDelegate;
 

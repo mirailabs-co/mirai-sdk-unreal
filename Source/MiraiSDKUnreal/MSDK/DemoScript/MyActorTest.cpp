@@ -16,6 +16,7 @@ AMyActorTest::AMyActorTest()
 FString AMyActorTest::GetMyUserData()
 {
 	FString result = FString();
+	result += "MyUserData:\n";
 	result += "Id: " + ShardsTech::MyUser.Id + "\n";
 	result += "ClientId: " + ShardsTech::MyUser.ClientId + "\n";
 	result += "UserId: " + ShardsTech::MyUser.UserId + "\n";
@@ -28,16 +29,40 @@ FString AMyActorTest::GetMyUserData()
 FString AMyActorTest::GetMyGuildData()
 {
 	FString result = FString();
+	result += "MyGuild:\n";
 	result += "Id: " + ShardsTech::MyGuild._id + "\n";
-	result += "MemberCount: " + FString::FromInt(ShardsTech::MyGuild.userCount) + "\n";
+	result += "MemberCount: " + FString::FromInt(ShardsTech::MyGuild.Users.Num()) + "\n";
 	result += "SeatPrice: " + FString::FromInt(ShardsTech::MyGuild.seatPrice) + "\n";
 	result += "Owner: " + ShardsTech::MyGuild.owner.UserId + "\n";
+	return result;
+}
+
+FString AMyActorTest::GetUserHistory()
+{
+	FString result = FString();
+	result += "User history:\n";
+	for (auto History : UserHistories)
+	{
+		result += History.type + "\n";
+	}
+	return result;
+}
+
+FString AMyActorTest::GetGuildHistory()
+{
+	FString result = FString();
+	result += "Guild history:\n";
+	for (auto History : GuildHistories)
+	{
+		result += History.User.UserId + " - " + History.type + "\n";
+	}
 	return result;
 }
 
 FString AMyActorTest::GetLeaderboards()
 {
 	FString result = FString();
+	result += "Leaderboards:\n";
 	for (auto leaderboard : ShardsTech::ListLeaderboards)
 	{
 		result += leaderboard._id + " - " + leaderboard.name + "\n";
@@ -48,6 +73,7 @@ FString AMyActorTest::GetLeaderboards()
 FString AMyActorTest::GetListGuild()
 {
 	FString result = FString();
+	result += "List guild:\n";
 	for (auto guildData : GuildScoreDto.data)
 	{
 		result += guildData.guild._id + " - " + guildData.guild.name + "\n";
@@ -58,6 +84,7 @@ FString AMyActorTest::GetListGuild()
 FString AMyActorTest::GetMyRequestJoinGuild()
 {
 	FString result = FString();
+	result += "My request:\n";
 	int index = 0;
 	for (auto request : ShardsTech::ListJoinGuildRequests)
 	{
@@ -67,11 +94,24 @@ FString AMyActorTest::GetMyRequestJoinGuild()
 	return result;
 }
 
+FString AMyActorTest::GetGuildRequestJoinGuild()
+{
+	FString result = FString();
+	result += "Guild request:\n";
+	int index = 0;
+	for (auto request : GuildRequests)
+	{
+		index++;
+		result += FString::FromInt(index) + ". " + request.guild + " - " + GameUtils::EnumToString(request.status) + "\n";
+	}
+	return result;
+}
+
+
 FString AMyActorTest::GetFirstLeaderboard()
 {
 	return FString(ShardsTech::ListLeaderboards[0]._id);
 }
-
 
 // Called when the game starts or when spawned
 void AMyActorTest::BeginPlay()
@@ -142,7 +182,31 @@ void AMyActorTest::FetchGuilds(FString leaderboardId, FString nameFilter, int pa
 	{
 		UpdateUIDelegate.Broadcast();
 	});
+	ShardsTech::GetJoinGuildRequestsOfGuild(ShardsTech::MyGuild._id, [this](auto res)
+	{
+		GuildRequests = res;
+		UpdateUIDelegate.Broadcast();
+	});
 }
+
+void AMyActorTest::UpdateUserHistory(int page, int limit)
+{
+	ShardsTech::GetUserHistories(page, limit, [this](auto res)
+	{
+		UserHistories = res.data;
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+void AMyActorTest::UpdateGuildHistory(int page, int limit)
+{
+	ShardsTech::GetGuildHistories(page, limit, [this](auto res)
+	{
+		GuildHistories = res.data;
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
 
 void AMyActorTest::JoinGuild(FString guildId)
 {
