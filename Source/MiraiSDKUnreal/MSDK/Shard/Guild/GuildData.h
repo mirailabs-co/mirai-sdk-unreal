@@ -8,7 +8,6 @@ USTRUCT(BlueprintType)
 struct FGuildData
 {
 	GENERATED_BODY()
-
 public:
 	UPROPERTY()
 	FString _id;
@@ -25,8 +24,8 @@ public:
 	UPROPERTY()
 	FString name;
 
-	// UPROPERTY()
-	// FString metadata;
+	UPROPERTY()
+	TMap<FString, FString> metadata;
 
 	UPROPERTY()
 	double seatPrice;

@@ -15,10 +15,4 @@ struct FMyGuildData : public FGuildData
 
 	UPROPERTY(BlueprintReadWrite, Category = "MyGuildData")
 	int64 StartAllowUpdateTimestamp;
-
-	// UFUNCTION(BlueprintPure, Category = "MyGuildData")
-	// int GetUserCount() const
-	// {
-	// 	return Users.Num();
-	// }
 };

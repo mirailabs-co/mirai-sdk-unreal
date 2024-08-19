@@ -69,6 +69,12 @@ template <typename T>
 					callbackSuccess(result);
 			}
 			else
+			if constexpr (std::is_same_v<T, int>)
+			{
+				if (callbackSuccess != nullptr)
+					callbackSuccess(FCString::Atoi(*result));
+			}
+			else
 			if constexpr (is_array<T>::value)
 			{
 				using ElementType = typename array_element_type<T>::type;

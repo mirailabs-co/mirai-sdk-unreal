@@ -1,6 +1,7 @@
 ﻿#include "ShardsTech.h"
 
 #include "Guild/GuildScoreDTO.h"
+#include "Guild/UpdateGuildRequestData.h"
 #include "History/GuildHistoryList.h"
 #include "History/UserHistory.h"
 #include "History/UserHistoryList.h"
@@ -8,6 +9,7 @@
 #include "Serialization/JsonSerializable.h"
 
 #include "MiraiSDKUnreal/MSDK/RestApi.h"
+#include "User/UserScoresDTO.h"
 
 FShardsTechUser ShardsTech::MyUser;
 FMyGuildData ShardsTech::MyGuild;
@@ -72,12 +74,12 @@ void ShardsTech::FetchMyGuild(TFunction<void()> onSuccess, TFunction<void()> onF
 	};
 	RestApi::Request<FMyGuildData>(ShardAPI + "guilds/guild-of-user", "GET", "", CallbackSuccess, onFailed);
 }
-void ShardsTech::FetchMySeatOnSale(TFunction<void()> onSuccess, TFunction<void()> onFailed)
+void ShardsTech::FetchMySeatOnSale(TFunction<void(FSellSeatData)> onSuccess, TFunction<void()> onFailed)
 {
 	auto CallbackSuccess = [onSuccess](auto responeseData)
 	{
 		if (onSuccess != nullptr)
-			onSuccess();
+			onSuccess(responeseData);
 	};
 	RestApi::Request<FSellSeatData>(ShardAPI + "user-sell-guild/my", "GET", "", CallbackSuccess, onFailed);
 }
@@ -111,7 +113,7 @@ void ShardsTech::GetGuildScores(FString leaderBoardId, FString name, int page, i
 	url.Append(FString::Printf(TEXT("&page=%d&limit=%d&sort=%s"), page, limit, *GameUtils::EnumToString(sort)));
 
 
-	RestApi::Request<FGuildScoreDTO>(ShardAPI + url, "GET", "", CallbackSuccess);
+	RestApi::Request<FGuildScoreDTO>(ShardAPI + url, "GET", "", CallbackSuccess, onFailed);
 }
 
 void ShardsTech::CreateJoinGuildRequest(FString guildId, TFunction<void(FJoinGuildRequest)> onSuccess, TFunction<void()> onFailed)
@@ -208,4 +210,132 @@ void ShardsTech::GetGuildHistories(int page, int limit, TFunction<void(FGuildHis
 	url += "limit=" + FString::FromInt(limit);
 	url += "&page=" + FString::FromInt(page);
 	RestApi::Request<FGuildHistoryList>(ShardAPI + url, "GET", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::GetUserScores(FString leaderBoardId, int page, int limit, ESortType sort,
+	TFunction<void(FUserScoresDTO)> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess](auto responeseData)
+	{
+		if (onSuccess != nullptr)
+			onSuccess(responeseData);
+	};
+	
+	FString url = "user-score?";
+	url += "leaderBoardId=" + leaderBoardId;
+	url += "&page=" + page;
+	url += "&limit=" + limit;
+	url += "&sort=" + GameUtils::EnumToString(sort);
+	RestApi::Request<FUserScoresDTO>(ShardAPI + url, "GET", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::GetMyFractions(TFunction<void(TArray<FMyFractionsOfGuildData>)> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess](auto responeseData)
+	{
+		if (onSuccess != nullptr)
+			onSuccess(responeseData);
+	};
+	
+	RestApi::Request<TArray<FMyFractionsOfGuildData>>(ShardAPI + "guilds/share/user", "GET", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::GetTotalFractionsOfGuild(FString guildId, TFunction<void(int)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<int>(ShardAPI + "guilds/" + guildId, "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::GetMyFractionsOfGuild(FString guildId, TFunction<void(int)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<int>(ShardAPI + "guilds/user/" + guildId, "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::GetBuyFractionsPrice(FString guildId, int amount, TFunction<void(FFractionsPriceData)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<FFractionsPriceData>(ShardAPI + "guilds/share-price/" + guildId + "/" + FString::FromInt(amount), "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::GetSellFractionsPrice(FString guildId, int amount, TFunction<void(FFractionsPriceData)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<FFractionsPriceData>(ShardAPI + "guilds/sell-share-price/" + guildId + "/" + FString::FromInt(amount), "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::GetSeatsOnSale(FString guildId, TFunction<void(TArray<FSellSeatData>)> onSuccess, TFunction<void()> onFailed)
+{
+	FString url = "user-sell-guild/";
+	if (guildId == "") url += "list";
+	else url += guildId;
+	RestApi::Request<TArray<FSellSeatData>>(ShardAPI + url, "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::GetBuySeatPrice(FString guildId, TFunction<void(FSellSeatData)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<FSellSeatData>(ShardAPI + "user-sell-guild/slot-price/" + guildId, "GET", "", onSuccess, onFailed);
+}
+
+void ShardsTech::UpdateSellSeatPrice(FString sellSlotId, double price, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{	
+	FUpdateSellSeatPriceRequestData requestData =
+	{
+		sellSlotId,
+		price,
+	};
+	FString jsonData;
+	FJsonObjectConverter::UStructToJsonObjectString(requestData, jsonData);
+	
+	auto CallbackSuccess = [onSuccess](auto responeseData)
+	{
+		if (onSuccess != nullptr)
+			onSuccess();
+	};
+	
+	RestApi::Request<FString>(ShardAPI + "member/sell-slot", "PUT", jsonData, CallbackSuccess, onFailed);
+}
+
+void ShardsTech::CancelSellSeat(FString sellSeatId, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
+	{
+		ShardsTech::FetchMySeatOnSale([onSuccess, onFailed](auto res)
+		{
+			ShardsTech::FetchMyGuild(onSuccess, onFailed);
+		}, onFailed);
+	};
+	RestApi::Request<FString>(ShardAPI + "member/sell-slot/" + sellSeatId, "DELETE", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::BurnSeat(TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
+	{
+		ShardsTech::FetchMyGuild(onSuccess, onFailed);
+	};
+	RestApi::Request<FString>(ShardAPI + "member/sell-slot/burn/" + MyGuild._id, "DELETE", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::UpdateGuild(FString name, double slotPrice, float txGuildOwnerShare, FProfitPercentConfig profitPercentConfig, FString avatar, FString description, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	FUpdateGuildRequestData requestData = FUpdateGuildRequestData();
+
+	if (name != "") requestData.name = name;
+	if (slotPrice > 0) requestData.slotPrice = slotPrice;
+	if (txGuildOwnerShare > 0) requestData.txGuildOwnerShare = txGuildOwnerShare;
+	if (profitPercentConfig.GuildOwnerPercent > 0 && profitPercentConfig.FractionsOwnerPercent > 0)
+	{
+		auto rewardForMem = 1 - profitPercentConfig.FractionsOwnerPercent;
+		requestData.rewardShareForMembers = rewardForMem;
+		requestData.guildOwnerShare = profitPercentConfig.GuildOwnerPercent / rewardForMem;
+	}
+	if (avatar != "") requestData.avatar = avatar;
+	if (description != "") requestData.description = description;
+	
+	FString jsonData;
+	FJsonObjectConverter::UStructToJsonObjectString(requestData, jsonData);
+	
+	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
+	{
+		ShardsTech::FetchMyGuild(onSuccess, onFailed);
+	};
+	
+	RestApi::Request<FString>(ShardAPI + "guilds/" + MyGuild._id, "PUT", "", CallbackSuccess, onFailed);
 }

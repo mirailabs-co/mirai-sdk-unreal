@@ -31,9 +31,12 @@ FString AMyActorTest::GetMyGuildData()
 	FString result = FString();
 	result += "MyGuild:\n";
 	result += "Id: " + ShardsTech::MyGuild._id + "\n";
+	result += "Name: " + ShardsTech::MyGuild.name + "\n";
+	result += "Owner: " + ShardsTech::MyGuild.owner.UserId + "\n";
+	if (ShardsTech::MyGuild.metadata.Contains("desc"))
+		result += "Description: " + ShardsTech::MyGuild.metadata["desc"] + "\n";
 	result += "MemberCount: " + FString::FromInt(ShardsTech::MyGuild.Users.Num()) + "\n";
 	result += "SeatPrice: " + FString::FromInt(ShardsTech::MyGuild.seatPrice) + "\n";
-	result += "Owner: " + ShardsTech::MyGuild.owner.UserId + "\n";
 	return result;
 }
 
@@ -161,7 +164,7 @@ void AMyActorTest::FetchMyGuild()
 }
 void AMyActorTest::FetchMySeatOnSale()
 {
-	ShardsTech::FetchMySeatOnSale([this]()
+	ShardsTech::FetchMySeatOnSale([this](auto res)
 	{
 		UpdateUIDelegate.Broadcast();
 	});
@@ -207,10 +210,17 @@ void AMyActorTest::UpdateGuildHistory(int page, int limit)
 	});
 }
 
-
 void AMyActorTest::JoinGuild(FString guildId)
 {
 	ShardsTech::CreateJoinGuildRequest(guildId, [this](auto res)
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+void AMyActorTest::UpdateGuild(FString name, double slotPrice, double guildOwnerPercent, double fractionsOwnerPercent, FString avatar, FString description)
+{
+	ShardsTech::UpdateGuild(name, slotPrice, 0.9f, FProfitPercentConfig(guildOwnerPercent, fractionsOwnerPercent), avatar, description, [this]()
 	{
 		UpdateUIDelegate.Broadcast();
 	});

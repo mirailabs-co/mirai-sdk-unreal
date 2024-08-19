@@ -16,6 +16,7 @@
 #include "Referral/ChildReferralData.h"
 #include "Seat/SellSeatData.h"
 #include "User/ShardsTechUser.h"
+#include "User/UserScoresDTO.h"
 
 static FString ShardAPI;
 
@@ -45,7 +46,8 @@ public: //User
 	static void Logout();
 	static void LinkAddress();
 	static void FetchMyUser(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void GetUserScores();
+	static void GetUserScores(FString leaderBoardId, int page = 1, int limit = 100, ESortType sort = ESortType::desc,
+		TFunction<void(FUserScoresDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
 public: //History
 	static void GetUserHistories(int page = 1, int limit = 100, TFunction<void(FUserHistoryList)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
@@ -67,13 +69,14 @@ public: //Guild
 		TFunction<void(FGuildScoreDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void CreateGuild(FString name, double seatPrice, FString metadata, float txGuildOwnerShare,
 		float profitGuildOwner, float profitMember);
-	static void GetGuildScores(const FString& leaderBoardId, const TArray<FString>& guildIds, TFunction<void(FGuildScoreDTO)> onSuccess, TFunction<void()> onFailed);
 	static void GetIndexOfGuildInLeaderboard(const FString& guildId, const FString& leaderBoardId, TFunction<void(int)> onSuccess, TFunction<void()> onFailed);
 	static void GetUsersOfGuild(const FString& guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess, TFunction<void()> onFailed);
 
 public: //GuildOwner
-	static void ChangeGuildOwner(const FString& NewOwnerShardsId);
-	static void UpdateGuild(const FString& Name, double SeatPrice, float TxGuildOwnerShare, const FProfitPercentConfig& ProfitPercentConfig, const FString& Avatar, const FString& Description);
+	static void ChangeGuildOwner(FString newOwnerShardsId);
+	static void UpdateGuild(FString name = "", double seatPrice = 0, float txGuildOwnerShare = 0,
+			FProfitPercentConfig profitPercentConfig = FProfitPercentConfig(0, 0), FString avatar = "", FString description = "",
+			TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void DisbandGuild();
 	static void AcceptJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void RejectJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
@@ -85,25 +88,24 @@ public: //JoinRequest
 	static void GetJoinGuildRequestsOfGuild(FString guildId, TFunction<void(TArray<FJoinGuildRequest>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
 public: //Fraction
-	static void GetMyFractions(TFunction<void(const TArray<FMyFractionsOfGuildData>&)> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void GetTotalFractionsOfGuild(const FString& GuildId, TFunction<void(int32)> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void GetMyFractionsOfGuild(const FString& GuildId, TFunction<void(int32)> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void GetBuyFractionsPrice(const FString& GuildId, int64 Amount, TFunction<void(const FFractionsPriceData&)> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void GetSellFractionsPrice(const FString& GuildId, int64 Amount, TFunction<void(const FFractionsPriceData&)> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void BuyFractions(const FString& GuildAddress, int64 Amount, int64 Index, TFunction<void()> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
-	static void SellFractions(const FString& GuildAddress, int64 Amount, int64 Index, TFunction<void()> OnSuccess, TFunction<void(const FString& ErrorMessage)> OnError);
+	static void GetMyFractions(TFunction<void(TArray<FMyFractionsOfGuildData>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetTotalFractionsOfGuild(FString guildId, TFunction<void(int)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetMyFractionsOfGuild(FString guildId, TFunction<void(int)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetBuyFractionsPrice(FString guildId, int amount, TFunction<void(FFractionsPriceData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetSellFractionsPrice(FString guildId, int amount, TFunction<void(FFractionsPriceData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void BuyFractions(FString guildAddress, long amount, long index = 0, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void SellFractions(FString guildAddress, long amount, long index = 0, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
 public: //Seat
 	static FSellSeatData MySeatOnSale;
-	static void FetchMySeatOnSale(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void GetSeatsOnSale(const FString& guildId = "");
-	static void GetBuySeatPrice(const FString& guildId);
-	static void BuySeat(const FString& guildAddress, const FString& seller, float price);
+	static void FetchMySeatOnSale(TFunction<void(FSellSeatData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetSeatsOnSale(FString guildId = "", TFunction<void(TArray<FSellSeatData>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetBuySeatPrice(FString guildId, TFunction<void(FSellSeatData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void BuySeat(FString guildAddress, FString seller, double price);
 	static void SellSeat(float price);
-	static void FetchMySeatOnSale();
-	static void UpdateSellSeatPrice(const FString& sellSeatId, float price);
-	static void CancelSellSeat(const FString& sellSeatId);
-	static void BurnSeat();
+	static void UpdateSellSeatPrice(FString sellSlotId, double price, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void CancelSellSeat(FString sellSeatId, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void BurnSeat(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
 public: //Referral
 	static long ReferralProfit;

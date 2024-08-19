@@ -66,6 +66,9 @@ public:
 	FString GetGuildRequestJoinGuild();
 	UPROPERTY(BlueprintAssignable, Category = "TestFunc")
 	FUpdateUIDelegate UpdateUIDelegate;
+	
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void UpdateGuild(FString name, double slotPrice, double guildOwnerPercent, double fractionsOwnerPercent, FString avatar, FString description);
 
 protected:
 	// Called when the game starts or when spawned

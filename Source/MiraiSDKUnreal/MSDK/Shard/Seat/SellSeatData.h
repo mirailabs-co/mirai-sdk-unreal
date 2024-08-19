@@ -28,3 +28,14 @@ struct FSellSeatData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sell Seat Data")
 	float price;
 };
+
+USTRUCT(BlueprintType)
+struct FUpdateSellSeatPriceRequestData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Update Sell Seat Data")
+	FString sellSlotId;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Update Sell Seat Data")
+	double price;
+};
