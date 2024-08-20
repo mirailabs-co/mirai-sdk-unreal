@@ -12,19 +12,19 @@ struct FChildReferralData
 	FString _id;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
-	double totalBuyAmount;
+	double totalBuyAmount = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
-	double totalBuyPrice;
+	double totalBuyPrice = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
-	double totalSellAmount;
+	double totalSellAmount = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
-	double totalSellPrice;
+	double totalSellPrice = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
-	double totalReferralPrice;
+	double totalReferralPrice = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Referral Data")
 	FShardsTechUser user;

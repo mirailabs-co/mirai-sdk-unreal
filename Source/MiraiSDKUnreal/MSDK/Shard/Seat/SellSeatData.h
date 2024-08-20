@@ -26,7 +26,7 @@ struct FSellSeatData
 	FString clientId;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sell Seat Data")
-	float price;
+	float price = 0;
 };
 
 USTRUCT(BlueprintType)

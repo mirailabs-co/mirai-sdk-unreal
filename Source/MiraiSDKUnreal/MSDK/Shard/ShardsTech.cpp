@@ -315,29 +315,30 @@ void ShardsTech::BurnSeat(TFunction<void()> onSuccess, TFunction<void()> onFaile
 
 void ShardsTech::UpdateGuild(FString name, double slotPrice, float txGuildOwnerShare, FProfitPercentConfig profitPercentConfig, FString avatar, FString description, TFunction<void()> onSuccess, TFunction<void()> onFailed)
 {
-	FUpdateGuildRequestData requestData = FUpdateGuildRequestData();
-
-	if (name != "") requestData.name = name;
-	if (slotPrice > 0) requestData.slotPrice = slotPrice;
-	if (txGuildOwnerShare > 0) requestData.txGuildOwnerShare = txGuildOwnerShare;
+    TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	
+	if (name != "") data->SetStringField("name", name);
+	if (slotPrice > 0) data->SetNumberField("slotPrice", slotPrice);
+	if (txGuildOwnerShare > 0) data->SetNumberField("txGuildOwnerShare", txGuildOwnerShare);
 	if (profitPercentConfig.GuildOwnerPercent > 0 && profitPercentConfig.FractionsOwnerPercent > 0)
 	{
 		auto rewardForMem = 1 - profitPercentConfig.FractionsOwnerPercent;
-		requestData.rewardShareForMembers = rewardForMem;
-		requestData.guildOwnerShare = profitPercentConfig.GuildOwnerPercent / rewardForMem;
+		data->SetNumberField("rewardShareForMember", rewardForMem);
+		data->SetNumberField("guildOwnerShare", profitPercentConfig.GuildOwnerPercent / rewardForMem);
 	}
-	if (avatar != "") requestData.avatar = avatar;
-	if (description != "") requestData.description = description;
-	
+	if (avatar != "") data->SetStringField("avatar", avatar);
+	if (description != "") data->SetStringField("description", description);
+
 	FString jsonData;
-	FJsonObjectConverter::UStructToJsonObjectString(requestData, jsonData);
+	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&jsonData);
+	FJsonSerializer::Serialize(data.ToSharedRef(), Writer);
 	
 	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
 	{
 		ShardsTech::FetchMyGuild(onSuccess, onFailed);
 	};
 	
-	RestApi::Request<FString>(ShardAPI + "guilds/" + MyGuild._id, "PUT", "", CallbackSuccess, onFailed);
+	RestApi::Request<FString>(ShardAPI + "guilds/" + MyGuild._id, "PUT", jsonData, CallbackSuccess, onFailed);
 }
 
 void ShardsTech::GetUsersOfGuild(FString guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess, TFunction<void()> onFailed)

@@ -34,7 +34,7 @@ public:
 	float rewardShareForMembers;
 
 	UPROPERTY()
-	float txGuildOwnerShare;
+	float txGuildOwnerShare = 0.0f;
 
 	UPROPERTY()
 	float guildOwnerShare;

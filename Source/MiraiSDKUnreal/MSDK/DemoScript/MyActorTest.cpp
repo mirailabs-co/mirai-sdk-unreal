@@ -33,6 +33,10 @@ FString AMyActorTest::GetMyGuildData()
 	result += "Id: " + ShardsTech::MyGuild._id + "\n";
 	result += "Name: " + ShardsTech::MyGuild.name + "\n";
 	result += "Owner: " + ShardsTech::MyGuild.owner.UserId + "\n";
+	result += "TxGuildOwnerShare: " + FString::SanitizeFloat(ShardsTech::MyGuild.txGuildOwnerShare) + "\n";
+	result += "GuildOwnerShare: " + FString::SanitizeFloat(ShardsTech::MyGuild.guildOwnerShare) + "\n";
+	result += "RewardShareForMembers: " + FString::SanitizeFloat(ShardsTech::MyGuild.rewardShareForMembers) + "\n";
+	result += "SeatPrice: " + FString::SanitizeFloat(ShardsTech::MyGuild.seatPrice) + "\n";
 	if (ShardsTech::MyGuild.metadata.Contains("desc"))
 		result += "Description: " + ShardsTech::MyGuild.metadata["desc"] + "\n";
 	result += "Member: \n";
