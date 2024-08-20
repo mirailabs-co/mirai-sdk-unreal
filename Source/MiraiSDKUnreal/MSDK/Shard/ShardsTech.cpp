@@ -164,7 +164,7 @@ void ShardsTech::AcceptJoinGuildRequest(FString guildId, FString userId, TFuncti
 		if (onSuccess != nullptr)
 			onSuccess(responeseData);
 	};
-	RestApi::Request<FJoinGuildRequest>(ShardAPI + "join-guild-request/user-accept" + guildId, "PUT", jsonData, CallbackSuccess, onFailed);
+	RestApi::Request<FJoinGuildRequest>(ShardAPI + "join-guild-request/user-accept", "PUT", jsonData, CallbackSuccess, onFailed);
 }
 
 void ShardsTech::RejectJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess, TFunction<void()> onFailed)
@@ -181,7 +181,7 @@ void ShardsTech::RejectJoinGuildRequest(FString guildId, FString userId, TFuncti
 		if (onSuccess != nullptr)
 			onSuccess(responeseData);
 	};
-	RestApi::Request<FJoinGuildRequest>(ShardAPI + "join-guild-request/user-reject" + guildId, "PUT", jsonData, CallbackSuccess, onFailed);
+	RestApi::Request<FJoinGuildRequest>(ShardAPI + "join-guild-request/user-reject", "PUT", jsonData, CallbackSuccess, onFailed);
 }
 
 void ShardsTech::GetUserHistories(int page, int limit, TFunction<void(FUserHistoryList)> onSuccess, TFunction<void()> onFailed)
@@ -338,4 +338,17 @@ void ShardsTech::UpdateGuild(FString name, double slotPrice, float txGuildOwnerS
 	};
 	
 	RestApi::Request<FString>(ShardAPI + "guilds/" + MyGuild._id, "PUT", "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::GetUsersOfGuild(FString guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess, TFunction<void()> onFailed)
+{
+	RestApi::Request<TArray<FShardsTechUser>>(ShardAPI + "guilds/users/" + guildId, "GET", "", onSuccess, onFailed);
+}
+
+bool ShardsTech::IsAllowUpdate()
+{
+	if (MyGuild._id == "") return false;
+	return MyGuild.numberAllowUpdate > 0 &&
+		GameUtils::GetCurrentUTCTimestamp() <= MyGuild.EndAllowUpdateTimestamp &&
+		GameUtils::GetCurrentUTCTimestamp() >= MyGuild.StartAllowUpdateTimestamp;
 }

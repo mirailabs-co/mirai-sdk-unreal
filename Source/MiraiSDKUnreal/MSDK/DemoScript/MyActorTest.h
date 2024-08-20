@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "MiraiSDKUnreal/MSDK/Shard/Fraction/FractionsPriceData.h"
+#include "MiraiSDKUnreal/MSDK/Shard/Fraction/MyFractionsOfGuildData.h"
 #include "MiraiSDKUnreal/MSDK/Shard/Guild/GuildScoreDTO.h"
 #include "MiraiSDKUnreal/MSDK/Shard/History/GuildHistory.h"
 #include "MiraiSDKUnreal/MSDK/Shard/History/UserHistory.h"
@@ -18,6 +20,11 @@ class MIRAISDKUNREAL_API AMyActorTest : public AActor
 	GENERATED_BODY()
 	
 public:
+	TArray<FMyFractionsOfGuildData> myFractions;
+	TArray<FShardsTechUser> myGuildMember;
+	int myFractionsInGuildCount, totalFractionInGuild;
+	FFractionsPriceData buyFractionsPrice, sellFractionsPrice;	
+
 	// Sets default values for this actor's properties
 	AMyActorTest();
 	
@@ -33,6 +40,10 @@ public:
 	void FetchMyGuild();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void FetchMySeatOnSale();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void AcceptJoinGuildRequest(FString userId);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void RejectJoinGuildRequest(FString userId);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void FetchGuilds(FString leaderboardId, FString name, int page, int limit, ESortType sort);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
@@ -61,9 +72,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetMyGuildData();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void UpdateListFraction(FString guildId);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetListFraction();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetMyRequestJoinGuild();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	FString GetGuildRequestJoinGuild();
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	FString GetFractionInfo();
 	UPROPERTY(BlueprintAssignable, Category = "TestFunc")
 	FUpdateUIDelegate UpdateUIDelegate;
 	

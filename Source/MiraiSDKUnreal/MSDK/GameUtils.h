@@ -9,4 +9,14 @@ template <typename T>
 		// static_assert(TIsUEnumClass<T>::Value, "'T' template parameter to EnumToString must be a valid UEnum");
 		return StaticEnum<T>()->GetNameStringByValue((int64) EnumValue);
 	}
+	
+	static FDateTime GetCurrentUTCTime()
+	{
+		return FDateTime::UtcNow();
+	}
+	
+	static int64 GetCurrentUTCTimestamp()
+	{
+		return GetCurrentUTCTime().ToUnixTimestamp();
+	}
 };

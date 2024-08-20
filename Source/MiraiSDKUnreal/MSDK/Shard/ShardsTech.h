@@ -69,13 +69,13 @@ public: //Guild
 		TFunction<void(FGuildScoreDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void CreateGuild(FString name, double seatPrice, FString metadata, float txGuildOwnerShare,
 		float profitGuildOwner, float profitMember);
-	static void GetIndexOfGuildInLeaderboard(const FString& guildId, const FString& leaderBoardId, TFunction<void(int)> onSuccess, TFunction<void()> onFailed);
-	static void GetUsersOfGuild(const FString& guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess, TFunction<void()> onFailed);
+	static void GetUsersOfGuild(FString guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static bool IsAllowUpdate();
 
 public: //GuildOwner
 	static void ChangeGuildOwner(FString newOwnerShardsId);
 	static void UpdateGuild(FString name = "", double seatPrice = 0, float txGuildOwnerShare = 0,
-			FProfitPercentConfig profitPercentConfig = FProfitPercentConfig(0, 0), FString avatar = "", FString description = "",
+			FProfitPercentConfig profitPercentConfig = FProfitPercentConfig(), FString avatar = "", FString description = "",
 			TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void DisbandGuild();
 	static void AcceptJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);

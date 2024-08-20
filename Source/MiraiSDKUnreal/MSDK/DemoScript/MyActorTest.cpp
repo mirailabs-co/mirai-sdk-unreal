@@ -35,10 +35,42 @@ FString AMyActorTest::GetMyGuildData()
 	result += "Owner: " + ShardsTech::MyGuild.owner.UserId + "\n";
 	if (ShardsTech::MyGuild.metadata.Contains("desc"))
 		result += "Description: " + ShardsTech::MyGuild.metadata["desc"] + "\n";
-	result += "MemberCount: " + FString::FromInt(ShardsTech::MyGuild.Users.Num()) + "\n";
-	result += "SeatPrice: " + FString::FromInt(ShardsTech::MyGuild.seatPrice) + "\n";
+	result += "Member: \n";
+	for (auto member : myGuildMember)
+	{
+		result += member.UserId + "\n";
+	}
 	return result;
 }
+
+FString AMyActorTest::GetListFraction()
+{
+	FString result = FString();
+
+	result += "List fraction: \n";
+
+	for (auto fraction : myFractions)
+	{
+		result += fraction.guild.name + " - " + FString::FromInt(fraction.amount) + "\n";
+	}
+	
+	return result;
+}
+
+FString AMyActorTest::GetFractionInfo()
+{
+	FString result = FString();
+
+	result += "Fraction info: \n";
+
+	result += "My fraction in G: " + FString::FromInt(myFractionsInGuildCount) + "\n";
+	result += "Total fraction: " + FString::FromInt(totalFractionInGuild) + "\n";
+	result += "Buy price: " + FString::SanitizeFloat(buyFractionsPrice.price) + "\n";
+	result += "Sell price: " + FString::SanitizeFloat(sellFractionsPrice.price) + "\n";
+	
+	return result;
+}
+
 
 FString AMyActorTest::GetUserHistory()
 {
@@ -91,11 +123,29 @@ FString AMyActorTest::GetMyRequestJoinGuild()
 	int index = 0;
 	for (auto request : ShardsTech::ListJoinGuildRequests)
 	{
+		if (request.status != EJoinStatus::pending) continue;
 		index++;
 		result += FString::FromInt(index) + ". " + request.guild + " - " + GameUtils::EnumToString(request.status) + "\n";
 	}
 	return result;
 }
+
+void AMyActorTest::AcceptJoinGuildRequest(FString userId)
+{
+	ShardsTech::AcceptJoinGuildRequest(ShardsTech::MyGuild._id, userId, [this](auto res)
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+void AMyActorTest::RejectJoinGuildRequest(FString userId)
+{
+	ShardsTech::RejectJoinGuildRequest(ShardsTech::MyGuild._id, userId, [this](auto res)
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
 
 FString AMyActorTest::GetGuildRequestJoinGuild()
 {
@@ -104,6 +154,7 @@ FString AMyActorTest::GetGuildRequestJoinGuild()
 	int index = 0;
 	for (auto request : GuildRequests)
 	{
+		if (request.status != EJoinStatus::pending) continue;
 		index++;
 		result += FString::FromInt(index) + ". " + request.guild + " - " + GameUtils::EnumToString(request.status) + "\n";
 	}
@@ -190,6 +241,11 @@ void AMyActorTest::FetchGuilds(FString leaderboardId, FString nameFilter, int pa
 		GuildRequests = res;
 		UpdateUIDelegate.Broadcast();
 	});
+	ShardsTech::GetUsersOfGuild(ShardsTech::MyGuild._id, [this](auto res)
+	{
+		myGuildMember = res;
+		UpdateUIDelegate.Broadcast();
+	});
 }
 
 void AMyActorTest::UpdateUserHistory(int page, int limit)
@@ -220,8 +276,49 @@ void AMyActorTest::JoinGuild(FString guildId)
 
 void AMyActorTest::UpdateGuild(FString name, double slotPrice, double guildOwnerPercent, double fractionsOwnerPercent, FString avatar, FString description)
 {
+	if (!ShardsTech::IsAllowUpdate())
+	{
+		UE_LOG(LogTemp, Log, TEXT("Update not allowed"));
+		return;
+	}
 	ShardsTech::UpdateGuild(name, slotPrice, 0.9f, FProfitPercentConfig(guildOwnerPercent, fractionsOwnerPercent), avatar, description, [this]()
 	{
 		UpdateUIDelegate.Broadcast();
 	});
 }
+
+void AMyActorTest::UpdateListFraction(FString guildId)
+{
+	ShardsTech::GetMyFractions([this](auto res)
+	{
+		myFractions = res;
+		UpdateUIDelegate.Broadcast();
+	});
+	ShardsTech::GetMyFractionsOfGuild(guildId, [this](auto res)
+	{
+		myFractionsInGuildCount = res;
+		UpdateUIDelegate.Broadcast();
+	});
+	ShardsTech::GetSellFractionsPrice(guildId, 1, [this](auto res)
+	{
+		buyFractionsPrice = res;
+		UpdateUIDelegate.Broadcast();
+	});
+	ShardsTech::GetBuyFractionsPrice(guildId, 1, [this](auto res)
+	{
+		sellFractionsPrice = res;
+		UpdateUIDelegate.Broadcast();
+	});
+	ShardsTech::GetTotalFractionsOfGuild(guildId, [this](auto res)
+	{
+		totalFractionInGuild = res;
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+// void AMyActorTest::GetBuyFractionsPrice(FString guildId, int amount)
+// {
+// 	ShardsTech::GetBuyFractionsPrice([this](auto res)
+// 	{
+// 	});
+// }
