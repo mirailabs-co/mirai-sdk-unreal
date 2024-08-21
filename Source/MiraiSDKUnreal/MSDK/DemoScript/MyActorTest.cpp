@@ -175,14 +175,15 @@ FString AMyActorTest::GetFirstLeaderboard()
 void AMyActorTest::BeginPlay()
 {
 	Super::BeginPlay();
-	ShardsTech::Init(EShardEnviron::Dev);
 }
 
 void AMyActorTest::Login()
 {
-	ShardsTech::Login();
-
-	FetchMyUser(),FetchMyGuild(),FetchMySeatOnSale();
+	ShardsTech::Init(EShardEnviron::Dev, [this]()
+	{
+		ShardsTech::Login();
+		FetchMyUser(),FetchMyGuild(),FetchMySeatOnSale();
+	});
 }
 
 void AMyActorTest::Logout()
@@ -256,7 +257,7 @@ void AMyActorTest::UpdateUserHistory(int page, int limit)
 {
 	ShardsTech::GetUserHistories(page, limit, [this](auto res)
 	{
-		UserHistories = res.data;
+		UserHistories = res;
 		UpdateUIDelegate.Broadcast();
 	});
 }
@@ -265,7 +266,7 @@ void AMyActorTest::UpdateGuildHistory(int page, int limit)
 {
 	ShardsTech::GetGuildHistories(page, limit, [this](auto res)
 	{
-		GuildHistories = res.data;
+		GuildHistories = res;
 		UpdateUIDelegate.Broadcast();
 	});
 }
@@ -320,9 +321,12 @@ void AMyActorTest::UpdateListFraction(FString guildId)
 	});
 }
 
-// void AMyActorTest::GetBuyFractionsPrice(FString guildId, int amount)
-// {
-// 	ShardsTech::GetBuyFractionsPrice([this](auto res)
-// 	{
-// 	});
-// }
+void AMyActorTest::CreateGuild(FString name, double seatPrice, float guildOwnerPercent, float fractionsOwnerPercent)
+{
+	TSharedPtr<FJsonObject> metadata = MakeShareable(new FJsonObject);
+	metadata->SetStringField("transaction_id", "");
+	ShardsTech::CreateGuild(name, seatPrice, metadata, 0.9, FProfitPercentConfig(guildOwnerPercent, fractionsOwnerPercent), [this]()
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}

@@ -45,6 +45,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void RejectJoinGuildRequest(FString userId);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void CreateGuild(FString name, double seatPrice, float guildOwnerPercent, float fractionsOwnerPercent);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void FetchGuilds(FString leaderboardId, FString name, int page, int limit, ESortType sort);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void JoinGuild(FString guildId);

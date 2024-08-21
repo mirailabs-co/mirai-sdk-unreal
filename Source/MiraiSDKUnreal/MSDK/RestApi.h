@@ -28,13 +28,13 @@ template <typename U>
 	};
 	
 template <typename T>
-	static void Request(const FString& Url, const FString& method = "GET", const FString& data = "",
+	static void Request(const FString& Url, const FString& method = "GET", const FString& data = "", const FString& selectToken = "",
  		TFunction<void(T)> callbackSuccess = nullptr, TFunction<void()> callbackFailed = nullptr)
 	{
 		TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
 		Request->OnProcessRequestComplete().BindLambda([=] (FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 		{
-			OnResponseReceived<T>(Request, Response, bWasSuccessful, Url, callbackSuccess, callbackFailed);
+			OnResponseReceived<T>(Response, bWasSuccessful, Url, selectToken, callbackSuccess, callbackFailed);
 		});
 		Request->SetURL(Url);
 		Request->SetVerb(method);
@@ -47,12 +47,13 @@ template <typename T>
 			Request->SetContentAsString(data);
 		Request->ProcessRequest();
 
-		UE_LOG(LogTemp, Warning, TEXT(">> %s Request: %s"), *method, *Url);
+		auto log = ">> " + method + " Request: " + Url + " \n" + Request->GetHeader("Authorization");
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *log);
 	}
 	
 private:
 template <typename T>
-	static void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful, FString Url,
+	static void OnResponseReceived(FHttpResponsePtr Response, bool bWasSuccessful, FString Url, FString selectToken,
 		TFunction<void(T)> callbackSuccess, TFunction<void()> callbackFailed)
 	{
 		if (bWasSuccessful && Response.IsValid())
@@ -63,6 +64,28 @@ template <typename T>
 			
 			// Use FJsonObjectConverter to convert the JSON string to the struct
 			T MyValue;
+			if (selectToken != "")
+			{
+				TSharedPtr<FJsonObject> JsonObject;
+				
+				// Create a TSharedRef to hold the TJsonReader
+				TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(result);
+
+				// Deserialize the JSON string into the FJsonObject
+				if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
+				{
+					// Get the token from the FJsonObject
+					auto tokenValue = JsonObject->GetArrayField(selectToken);
+					FString tokenJson;
+					TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&tokenJson);
+					FJsonSerializer::Serialize(tokenValue, Writer);
+					result = tokenJson;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Failed to deserialize JSON"));
+				}
+			}
 			if constexpr (std::is_same_v<T, FString>)
 			{
 				if (callbackSuccess != nullptr)
@@ -97,10 +120,14 @@ template <typename T>
 							array.Add(data);
 						}
 					}
+					if (callbackSuccess != nullptr)
+						callbackSuccess(array);
 				}
-		
-				if (callbackSuccess != nullptr)
-					callbackSuccess(array);
+				else
+				{
+					if (callbackFailed != nullptr)
+					callbackFailed();
+				}
 			}
 			else
 			if (FJsonObjectConverter::JsonObjectStringToUStruct<T>(result, &MyValue))

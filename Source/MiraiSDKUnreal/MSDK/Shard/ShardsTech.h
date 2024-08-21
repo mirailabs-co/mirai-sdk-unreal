@@ -13,7 +13,6 @@
 #include "History/UserHistoryList.h"
 #include "JoinRequest/JoinGuildRequest.h"
 #include "Leaderboard/LeaderboardData.h"
-#include "Referral/ChildReferralData.h"
 #include "Seat/SellSeatData.h"
 #include "User/ShardsTechUser.h"
 #include "User/UserScoresDTO.h"
@@ -38,20 +37,21 @@ class ShardsTech
 {
 public:
 	static FShardsTechConfig GameConfig;
-	static void Init(EShardEnviron env);
+	static void Init(EShardEnviron env, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	
 public: //User
 	static FShardsTechUser MyUser;
 	static void Login();
 	static void Logout();
+	static bool IsLinkAddress();
 	static void LinkAddress();
 	static void FetchMyUser(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetUserScores(FString leaderBoardId, int page = 1, int limit = 100, ESortType sort = ESortType::desc,
 		TFunction<void(FUserScoresDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
 public: //History
-	static void GetUserHistories(int page = 1, int limit = 100, TFunction<void(FUserHistoryList)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void GetGuildHistories(int page = 1, int limit = 100, TFunction<void(FGuildHistoryList)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetUserHistories(int page = 1, int limit = 100, TFunction<void(TArray<FUserHistory>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void GetGuildHistories(int page = 1, int limit = 100, TFunction<void(TArray<FGuildHistory>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static TArray<FChatMessageData> GetChatHistory(int32 Page = 1, int32 Limit = 100);
 
 public: //Chat
@@ -67,8 +67,8 @@ public: //Guild
 	static void FetchMyGuild(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetGuildScores(FString leaderBoardId,FString name="", int page = 1, int limit = 100, ESortType sort = ESortType::asc,
 		TFunction<void(FGuildScoreDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void CreateGuild(FString name, double seatPrice, FString metadata, float txGuildOwnerShare,
-		float profitGuildOwner, float profitMember);
+	static void CreateGuild(FString name, double seatPrice, TSharedPtr<FJsonObject> metadata, float txGuildOwnerShare, FProfitPercentConfig profitPercentConfig,
+		TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetUsersOfGuild(FString guildId, TFunction<void(TArray<FShardsTechUser>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static bool IsAllowUpdate();
 
@@ -107,14 +107,12 @@ public: //Seat
 	static void CancelSellSeat(FString sellSeatId, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void BurnSeat(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
-public: //Referral
-	static long ReferralProfit;
-	static TArray<FChildReferralData> GetChildrenReferralData();
-
 private:
 	static void SetupSocket();
-	static void CreateDAppLink();
-	static void OpenDAppLink();
+	static void CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
+		TFunction<void(FString)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void OpenDAppLink(FString dAppLink, TFunction<void()> onSuccess, TFunction<void()> onFailed);
 	static void WaitAction();
-	static void ExecuteAction();
+	static void ExecuteAction(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
+		TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 };
