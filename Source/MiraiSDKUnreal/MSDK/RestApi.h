@@ -60,31 +60,49 @@ template <typename T>
 		{
 			auto result = Response->GetContentAsString();
 			UE_LOG(LogTemp, Log, TEXT("Request Response %s: %s"), *Url, *result);
-			// Handle the response data as needed
-			
-			// Use FJsonObjectConverter to convert the JSON string to the struct
-			T MyValue;
-			if (selectToken != "")
-			{
-				TSharedPtr<FJsonObject> JsonObject;
-				
-				// Create a TSharedRef to hold the TJsonReader
-				TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(result);
 
-				// Deserialize the JSON string into the FJsonObject
-				if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
+			TSharedPtr<FJsonObject> JsonObject;
+			TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(result);
+			if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
+			{
+				int statusCode = 0;
+				JsonObject->TryGetNumberField("statusCode", statusCode);
+				if (statusCode >= 400) //error code
 				{
-					// Get the token from the FJsonObject
-					auto tokenValue = JsonObject->GetArrayField(selectToken);
-					FString tokenJson;
-					TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&tokenJson);
-					FJsonSerializer::Serialize(tokenValue, Writer);
-					result = tokenJson;
+					if (callbackFailed != nullptr)
+						callbackFailed();
+					UE_LOG(LogTemp, Error, TEXT("Error %d"), statusCode);
+				}
+			}
+			else
+			{
+				if (result == "[]") //empty response
+				{
+					if (callbackFailed != nullptr)
+						callbackFailed();
+					UE_LOG(LogTemp, Error, TEXT("Empty response"));
 				}
 				else
 				{
 					UE_LOG(LogTemp, Error, TEXT("Failed to deserialize JSON"));
 				}
+			}
+			
+			T MyValue;
+			if (selectToken != "" && JsonObject.IsValid())
+			{
+				TArray<TSharedPtr<FJsonValue>> tokenValueArr = JsonObject->GetArrayField(selectToken);
+				FString tokenJson;
+				if (!tokenValueArr.IsEmpty())
+				{
+					TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&tokenJson);
+					FJsonSerializer::Serialize(tokenValueArr, Writer);
+				}
+				else
+				{
+					tokenJson = JsonObject->GetStringField(selectToken);
+				}
+				result = tokenJson;
 			}
 			if constexpr (std::is_same_v<T, FString>)
 			{

@@ -9,10 +9,7 @@
 #endif
 
 #include "Guild/GuildScoreDTO.h"
-#include "Guild/UpdateGuildRequestData.h"
-#include "History/GuildHistoryList.h"
 #include "History/UserHistory.h"
-#include "History/UserHistoryList.h"
 #include "MiraiSDKUnreal/MSDK/GameUtils.h"
 #include "Serialization/JsonSerializable.h"
 
@@ -372,26 +369,16 @@ void ShardsTech::CreateGuild(FString name, double seatPrice, TSharedPtr<FJsonObj
 	{
 		ShardsTech::FetchMyGuild(onSuccess);
 	};
-	ExecuteAction("create-guild", data, metadata, CallbackSuccess);
-}
-
-
-void ShardsTech::ExecuteAction(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
-		TFunction<void()> onSuccess, TFunction<void()> onFailed)
-{
-	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
-	{
-		ShardsTech::OpenDAppLink(responeseData, onSuccess, onFailed);
-	};
-	CreateDAppLink(type, parameters, metadata, CallbackSuccess, onFailed);
+	ExecuteAction("create-guild", data, metadata, CallbackSuccess, onFailed);
 }
 
 void ShardsTech::CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
-		TFunction<void(FString)> onSuccess, TFunction<void()> onFailed)
+		TFunction<void(FString, FString)> onSuccess, TFunction<void()> onFailed)
 {
 	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
 	data->SetStringField("type", type);
-	data->SetObjectField("metadata", metadata);
+	if (metadata != nullptr)
+		data->SetObjectField("metadata", metadata);
 
 	FString jsonData;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&jsonData);
@@ -407,7 +394,7 @@ void ShardsTech::CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters
 		qParams->SetStringField("gameId", GameConfig.clientId);
 		qParams->SetStringField("actionId", actionId);
 		
-		auto CreateLink = [qParams, type, onSuccess, onFailed]()
+		auto CreateLink = [qParams, type, onSuccess, onFailed, actionId]()
 		{
 			auto dAppUrl = GameConfig.linkDapp;
 			if (type != "create-guild")
@@ -429,7 +416,7 @@ void ShardsTech::CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters
 			UE_LOG(LogTemp, Log, TEXT("DAppLink: %s"), *dAppLink);
 
 			if (onSuccess != nullptr)
-				onSuccess(dAppLink);
+				onSuccess(dAppLink, actionId);
 		};
 		
 		if (IsLinkAddress())
@@ -458,12 +445,157 @@ void ShardsTech::CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters
 	RestApi::Request<FString>(ShardAPI + "actions", "POST", jsonData, "_id", CallbackSuccessAction, onFailed);
 }
 
-void ShardsTech::OpenDAppLink(FString dappLink, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+void ShardsTech::ExecuteAction(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
+		TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	auto CallbackSuccess = [onSuccess, onFailed](auto dappLink, auto actionId)
+	{
+		ShardsTech::OpenDAppLink(dappLink, actionId, onSuccess, onFailed);
+	};
+	CreateDAppLink(type, parameters, metadata, CallbackSuccess, onFailed);
+}
+
+void ShardsTech::OpenDAppLink(FString dappLink, FString actionId, TFunction<void()> onSuccess, TFunction<void()> onFailed)
 {
 	FPlatformProcess::LaunchURL(*dappLink, nullptr, nullptr);
+	AsyncTask(ENamedThreads::AnyThread, [actionId, onSuccess, onFailed]()
+	{
+		auto CallbackSuccess = [onSuccess]()
+		{
+			if (onSuccess != nullptr)
+				onSuccess();
+		};
+		WaitAction(actionId, 0, CallbackSuccess, onFailed);
+	});
 }
 
 bool ShardsTech::IsLinkAddress()
 {
 	return false;
+}
+
+void ShardsTech::WaitAction(FString actionId, int loopCount, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	if (loopCount >= 3000)
+	{
+		onFailed();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("WaitAction: %s %d"), *actionId, loopCount);
+		auto CallbackSuccess = [onSuccess, onFailed, actionId, loopCount](auto status)
+		{
+			if (status == "success")
+			{
+				if (onSuccess != nullptr)
+					onSuccess();
+			}
+			else
+			if (status == "error")
+			{
+				if (onSuccess != nullptr)
+					onFailed();
+			}
+			else
+			{
+				WaitAction(actionId, loopCount + 1, onSuccess, onFailed);
+			}
+		};
+		RestApi::Request<FString>(ShardAPI + "actions/" + actionId, "GET", "", "status", CallbackSuccess, onFailed);
+	}
+}
+
+void ShardsTech::LinkAddress(TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("userId", MyUser.UserId);
+	
+	ShardsTech::ExecuteAction(ShardAPI + "link-address", data, nullptr, onSuccess, onFailed);
+}
+
+void ShardsTech::ChangeGuildOwner(FString newOwnerShardsId, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("oldOwnerUserId", MyGuild.owner.UserId);
+	data->SetStringField("newOwnerId", newOwnerShardsId);
+	data->SetStringField("guildAddress", MyGuild.address);
+	
+	TSharedPtr<FJsonObject> metadata = MakeShareable(new FJsonObject);
+	metadata->SetStringField("newOwnerId", newOwnerShardsId);
+	metadata->SetStringField("guildAddress", MyGuild.address);
+
+	auto CallbackSuccess = [onSuccess]()
+	{
+		FetchMyGuild(onSuccess);
+	};
+	ShardsTech::ExecuteAction("change-guild-owner", data, metadata, CallbackSuccess, onFailed);
+}
+
+void ShardsTech::BuySeat(FString guildAddress, FString seller, double price, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("guildAddress", guildAddress);
+	
+	TSharedPtr<FJsonObject> metadata = MakeShareable(new FJsonObject);
+	metadata->SetStringField("guildAddress", guildAddress);
+	metadata->SetStringField("seller", seller);
+	metadata->SetNumberField("price", price);
+	
+	auto CallbackSuccess = [onSuccess]()
+	{
+		FetchMyGuild(onSuccess);
+	};
+	ShardsTech::ExecuteAction("buy-slot", data, metadata, CallbackSuccess, onFailed);
+}
+
+void ShardsTech::SellSeat(float price, TFunction<void(FSellSeatData)> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("guildId", MyGuild._id);
+	data->SetNumberField("price", price);
+	FString jsonData;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&jsonData);
+	FJsonSerializer::Serialize(data.ToSharedRef(), Writer);
+	
+	auto CallbackSuccess = [onSuccess, onFailed](auto responeseData)
+	{
+		auto CallbackSuccess = [onSuccess, onFailed]()
+		{
+			FetchMySeatOnSale(onSuccess, onFailed);
+		};
+		FetchMyGuild(CallbackSuccess);
+	};
+	RestApi::Request<FString>(ShardAPI + "member/sell-seat", "POST", jsonData, "", CallbackSuccess, onFailed);
+}
+
+void ShardsTech::DisbandGuild(TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("guildAddress", MyGuild.address);
+
+	auto CallbackSuccess = [onSuccess]()
+	{
+		FetchMyGuild(onSuccess);
+	};
+	ExecuteAction("disband-guild", data, nullptr, CallbackSuccess, onFailed);
+}
+
+void ShardsTech::BuyFractions(FString guildAddress, long amount, long index, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("guildAddress", guildAddress);
+	data->SetNumberField("amount", amount);
+	data->SetNumberField("index", index);
+	
+	ExecuteAction("buy-share", data, nullptr, onSuccess, onFailed);
+}
+
+void ShardsTech::SellFractions(FString guildAddress, long amount, long index, TFunction<void()> onSuccess, TFunction<void()> onFailed)
+{
+	TSharedPtr<FJsonObject> data = MakeShareable(new FJsonObject);
+	data->SetStringField("guildAddress", guildAddress);
+	data->SetNumberField("amount", amount);
+	data->SetNumberField("index", index);
+	
+	ExecuteAction("sell-share", data, nullptr, onSuccess, onFailed);
 }

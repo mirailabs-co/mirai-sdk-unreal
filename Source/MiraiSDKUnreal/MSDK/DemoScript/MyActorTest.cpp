@@ -292,8 +292,22 @@ void AMyActorTest::UpdateGuild(FString name, double slotPrice, double guildOwner
 	});
 }
 
+void AMyActorTest::DisbandGuild()
+{
+	if (ShardsTech::MyGuild._id == "")
+	{
+		UE_LOG(LogTemp, Log, TEXT("not in guild"));
+		return;
+	}
+	ShardsTech::DisbandGuild([this]()
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
 void AMyActorTest::UpdateListFraction(FString guildId)
 {
+	selectingGuildId = guildId;
 	ShardsTech::GetMyFractions([this](auto res)
 	{
 		myFractions = res;
@@ -321,12 +335,32 @@ void AMyActorTest::UpdateListFraction(FString guildId)
 	});
 }
 
+void AMyActorTest::BuyFraction(int amount, int index)
+{
+	ShardsTech::BuyFractions(selectingGuildId, amount, index, [this]()
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
+void AMyActorTest::SellFraction(int amount, int index)
+{
+	ShardsTech::SellFractions(selectingGuildId, amount, index, [this]()
+	{
+		UpdateUIDelegate.Broadcast();
+	});
+}
+
 void AMyActorTest::CreateGuild(FString name, double seatPrice, float guildOwnerPercent, float fractionsOwnerPercent)
 {
 	TSharedPtr<FJsonObject> metadata = MakeShareable(new FJsonObject);
-	metadata->SetStringField("transaction_id", "");
+	metadata->SetStringField("transaction_id", "c7c95d92-1b50-4ca9-bbe9-f0911d92b9e8");
 	ShardsTech::CreateGuild(name, seatPrice, metadata, 0.9, FProfitPercentConfig(guildOwnerPercent, fractionsOwnerPercent), [this]()
 	{
 		UpdateUIDelegate.Broadcast();
+		UE_LOG(LogTemp, Log, TEXT("Create guild success"));
+	}, [this]()
+	{
+		UE_LOG(LogTemp, Log, TEXT("Create guild failed"));
 	});
 }

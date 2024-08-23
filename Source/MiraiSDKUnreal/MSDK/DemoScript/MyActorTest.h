@@ -23,11 +23,16 @@ public:
 	TArray<FMyFractionsOfGuildData> myFractions;
 	TArray<FShardsTechUser> myGuildMember;
 	int myFractionsInGuildCount, totalFractionInGuild;
-	FFractionsPriceData buyFractionsPrice, sellFractionsPrice;	
+	FFractionsPriceData buyFractionsPrice, sellFractionsPrice;
+	FString selectingGuildId;
 
 	// Sets default values for this actor's properties
 	AMyActorTest();
 	
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void BuyFraction(int amount, int index);
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void SellFraction(int amount, int index);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void Login();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
@@ -55,6 +60,8 @@ public:
 
 	TArray<FUserHistory> UserHistories;
 	TArray<FGuildHistory> GuildHistories;
+	UFUNCTION(BlueprintCallable, Category = "TestFunc")
+	void DisbandGuild();
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")
 	void UpdateUserHistory(int page, int limit);
 	UFUNCTION(BlueprintCallable, Category = "TestFunc")

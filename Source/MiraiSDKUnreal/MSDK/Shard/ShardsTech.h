@@ -8,9 +8,7 @@
 #include "Guild/GuildScoreDTO.h"
 #include "Guild/MyGuildData.h"
 #include "History/GuildHistory.h"
-#include "History/GuildHistoryList.h"
 #include "History/UserHistory.h"
-#include "History/UserHistoryList.h"
 #include "JoinRequest/JoinGuildRequest.h"
 #include "Leaderboard/LeaderboardData.h"
 #include "Seat/SellSeatData.h"
@@ -44,7 +42,7 @@ public: //User
 	static void Login();
 	static void Logout();
 	static bool IsLinkAddress();
-	static void LinkAddress();
+	static void LinkAddress(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void FetchMyUser(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetUserScores(FString leaderBoardId, int page = 1, int limit = 100, ESortType sort = ESortType::desc,
 		TFunction<void(FUserScoresDTO)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
@@ -73,11 +71,11 @@ public: //Guild
 	static bool IsAllowUpdate();
 
 public: //GuildOwner
-	static void ChangeGuildOwner(FString newOwnerShardsId);
+	static void ChangeGuildOwner(FString newOwnerShardsId, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void UpdateGuild(FString name = "", double seatPrice = 0, float txGuildOwnerShare = 0,
 			FProfitPercentConfig profitPercentConfig = FProfitPercentConfig(), FString avatar = "", FString description = "",
 			TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void DisbandGuild();
+	static void DisbandGuild(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void AcceptJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void RejectJoinGuildRequest(FString guildId, FString userId, TFunction<void(FJoinGuildRequest)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 
@@ -101,8 +99,8 @@ public: //Seat
 	static void FetchMySeatOnSale(TFunction<void(FSellSeatData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetSeatsOnSale(FString guildId = "", TFunction<void(TArray<FSellSeatData>)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void GetBuySeatPrice(FString guildId, TFunction<void(FSellSeatData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void BuySeat(FString guildAddress, FString seller, double price);
-	static void SellSeat(float price);
+	static void BuySeat(FString guildAddress, FString seller, double price, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void SellSeat(float price, TFunction<void(FSellSeatData)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void UpdateSellSeatPrice(FString sellSlotId, double price, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void CancelSellSeat(FString sellSeatId, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void BurnSeat(TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
@@ -110,9 +108,9 @@ public: //Seat
 private:
 	static void SetupSocket();
 	static void CreateDAppLink(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
-		TFunction<void(FString)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
-	static void OpenDAppLink(FString dAppLink, TFunction<void()> onSuccess, TFunction<void()> onFailed);
-	static void WaitAction();
+		TFunction<void(FString, FString)> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void OpenDAppLink(FString dAppLink, FString actionId, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
+	static void WaitAction(FString actionId, int loopCount, TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 	static void ExecuteAction(FString type, TSharedPtr<FJsonObject> parameters, TSharedPtr<FJsonObject> metadata,
 		TFunction<void()> onSuccess = nullptr, TFunction<void()> onFailed = nullptr);
 };
